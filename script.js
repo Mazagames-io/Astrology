@@ -1,32 +1,9 @@
 /**
- * PWA: SERVICE WORKER & INSTALLATION
+ * COSMIC INSIGHTS - RELIABLE WEB ENGINE - V1.1
  */
-if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('sw.js').then(() => console.log('Service Worker Registered'));
-}
+console.log("Cosmic Engine V1.1 Loaded (Cache Cleared)");
 
-let deferredPrompt;
-const installBtn = document.getElementById('install-btn');
-
-window.addEventListener('beforeinstallprompt', (e) => {
-    e.preventDefault();
-    deferredPrompt = e;
-    installBtn.classList.remove('hidden');
-});
-
-installBtn.addEventListener('click', async () => {
-    if (!deferredPrompt) return;
-    deferredPrompt.prompt();
-    const { outcome } = await deferredPrompt.userChoice;
-    if (outcome === 'accepted') {
-        installBtn.classList.add('hidden');
-    }
-    deferredPrompt = null;
-});
-
-/**
- * DATA: ZODIAC SIGNS
- */
+// 1. DATA
 const zodiacSigns = [
     { id: 'aries', name: 'Aries', dates: 'Mar 21 - Apr 19', element: 'Fire', rulingPlanet: 'Mars', symbol: '♈', personality: 'Eager, dynamic, quick, and competitive. Aries is the pioneer and creates new paths.', traits: ['Courageous', 'Determined', 'Confident', 'Enthusiastic'] },
     { id: 'taurus', name: 'Taurus', dates: 'Apr 20 - May 20', element: 'Earth', rulingPlanet: 'Venus', symbol: '♉', personality: 'Strong, dependable, sensual, and creative. Taurus loves the finer things in life.', traits: ['Reliable', 'Patient', 'Practical', 'Devoted'] },
@@ -39,359 +16,234 @@ const zodiacSigns = [
     { id: 'sagittarius', name: 'Sagittarius', dates: 'Nov 22 - Dec 21', element: 'Fire', rulingPlanet: 'Jupiter', symbol: '♐', personality: 'Generous, idealistic, and great sense of humor. Sagittarius loves travel.', traits: ['Generous', 'Idealistic', 'Funny'] },
     { id: 'capricorn', name: 'Capricorn', dates: 'Dec 22 - Jan 19', element: 'Earth', rulingPlanet: 'Saturn', symbol: '♑', personality: 'Responsible, disciplined, and self-controlled. Capricorn is a master of self-control.', traits: ['Responsible', 'Disciplined', 'Self-control'] },
     { id: 'aquarius', name: 'Aquarius', dates: 'Jan 20 - Feb 18', element: 'Air', rulingPlanet: 'Uranus', symbol: '♒', personality: 'Deep, imaginative, original, and uncompromising. Aquarius is a forward-thinker.', traits: ['Progressive', 'Original', 'Independent'] },
-    { id: 'pisces', name: 'Pisces', dates: 'Feb 19 - Mar 20', element: 'Water', rulingPlanet: 'Neptune', symbol: '♓', personality: 'Affectionate, empathetic, wise, and artistic. Pisces is the most artistic sign.', traits: ['Compassionate', 'Artistic', 'Intuitive', 'Gentle'] },
+    { id: 'pisces', name: 'Pisces', dates: 'Feb 19 - Mar 20', element: 'Water', rulingPlanet: 'Neptune', symbol: '♓', personality: 'Affectionate, empathetic, wise, and artistic. Pisces is the most artistic sign.', traits: ['Compassionate', 'Artistic', 'Intuitive', 'Gentle'] }
 ];
 
 const COMPATIBILITY_MATRIX = {
     'Fire': { 'Fire': 85, 'Air': 90, 'Earth': 50, 'Water': 40 },
     'Air': { 'Fire': 90, 'Air': 85, 'Earth': 60, 'Water': 50 },
     'Earth': { 'Fire': 50, 'Air': 60, 'Earth': 85, 'Water': 90 },
-    'Water': { 'Fire': 40, 'Air': 50, 'Earth': 90, 'Water': 85 },
+    'Water': { 'Fire': 40, 'Air': 50, 'Earth': 90, 'Water': 85 }
 };
 
-/**
- * APP ROUTER
- */
-const router = {
-    views: ['home', 'sign-details', 'compatibility'],
+// 2. CORE ENGINE
+const CosmicApp = {
     currentSignId: null,
+    deferredPrompt: null,
 
-    navigate(viewName, params = {}) {
-        // 1. Update Navigation UI
-        document.querySelectorAll('.nav-item').forEach(btn => btn.classList.remove('active'));
-        if (viewName === 'home') document.querySelectorAll('.nav-item')[0].classList.add('active');
-        if (viewName === 'compatibility') document.querySelectorAll('.nav-item')[1].classList.add('active');
+    init() {
+        console.log("App Initializing...");
+        CosmicApp.renderGrid();
+        CosmicApp.initForm();
+        CosmicApp.setupListeners();
+        CosmicApp.showView('home');
+        
+        // SW
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('./sw.js').catch(e => console.warn(e));
+        }
+    },
 
-        // 2. Hide all views
-        document.querySelectorAll('.view').forEach(el => {
-            el.classList.remove('active');
-            el.classList.add('hidden');
+    setupListeners() {
+        // Nav Buttons
+        const navs = document.querySelectorAll('.nav-item');
+        if(navs[0]) navs[0].onclick = () => CosmicApp.showView('home');
+        if(navs[1]) navs[1].onclick = () => CosmicApp.showView('compatibility');
+
+        // Form
+        const form = document.getElementById('love-form');
+        if(form) form.onsubmit = (e) => {
+            e.preventDefault();
+            CosmicApp.runCompatibility();
+        };
+
+        // PWA
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            CosmicApp.deferredPrompt = e;
+            const btn = document.getElementById('install-btn');
+            if(btn) {
+                btn.classList.remove('hidden');
+                btn.onclick = () => {
+                    CosmicApp.deferredPrompt.prompt();
+                    btn.classList.add('hidden');
+                };
+            }
         });
+    },
 
-        // 3. Show target view
-        const target = document.getElementById(viewName === 'sign-details' ? 'sign-view' : `${viewName}-view`);
-        if (target) {
-            target.classList.remove('hidden');
-            target.classList.add('active');
-        }
+    showView(id) {
+        document.querySelectorAll('.view').forEach(v => v.classList.add('hidden'));
+        const target = document.getElementById(`${id}-view`);
+        if(target) target.classList.remove('hidden');
 
-        // 4. Specific Logic
-        if (viewName === 'home') {
-             renderLogic.renderZodiacGrid();
-             window.scrollTo(0, 0);
-        } else if (viewName === 'sign-details' && params.id) {
-            this.currentSignId = params.id;
-            renderLogic.renderSignDetails(params.id);
-            horoscopeManager.init(params.id);
-            window.scrollTo(0, 0);
-        } else if (viewName === 'compatibility') {
-            renderLogic.initCompatibilityForm();
-        }
-    }
-};
+        const navs = document.querySelectorAll('.nav-item');
+        navs.forEach(n => n.classList.remove('active'));
+        if(id === 'home') navs[0]?.classList.add('active');
+        if(id === 'compatibility') navs[1]?.classList.add('active');
+        
+        window.scrollTo(0,0);
+    },
 
-/**
- * RENDER LOGIC
- */
-const renderLogic = {
-    renderZodiacGrid() {
+    renderGrid() {
         const grid = document.getElementById('zodiac-grid');
+        if(!grid) return;
         grid.innerHTML = '';
-        zodiacSigns.forEach(sign => {
-            const card = document.createElement('div');
-            card.className = 'glass-panel zodiac-card';
-            card.onclick = () => router.navigate('sign-details', { id: sign.id });
-            card.innerHTML = `
-                <span class="card-symbol">${sign.symbol}</span>
-                <span class="card-name">${sign.name}</span>
-                <span class="card-date">${sign.dates}</span>
+        zodiacSigns.forEach(s => {
+            const el = document.createElement('div');
+            el.className = 'glass-panel zodiac-card';
+            el.onclick = () => CosmicApp.showSign(s.id);
+            el.innerHTML = `
+                <span class="card-symbol">${s.symbol}</span>
+                <span class="card-name">${s.name}</span>
+                <span class="card-date">${s.dates}</span>
             `;
-            grid.appendChild(card);
+            grid.appendChild(el);
         });
     },
 
-    renderSignDetails(id) {
-        const sign = zodiacSigns.find(s => s.id === id);
-        if (!sign) return;
+    showSign(id) {
+        const s = zodiacSigns.find(x => x.id === id);
+        if(!s) return;
+        CosmicApp.currentSignId = id;
 
-        document.getElementById('sign-symbol').textContent = sign.symbol;
-        document.getElementById('sign-symbol-bg').textContent = sign.symbol;
-        document.getElementById('sign-name').textContent = sign.name;
-        document.getElementById('sign-dates').textContent = sign.dates;
-        document.getElementById('sign-element').textContent = sign.element;
-        document.getElementById('sign-planet').textContent = sign.rulingPlanet;
-        document.getElementById('sign-personality').textContent = sign.personality;
+        document.getElementById('sign-symbol').textContent = s.symbol;
+        document.getElementById('sign-symbol-bg').textContent = s.symbol;
+        document.getElementById('sign-name').textContent = s.name;
+        document.getElementById('sign-dates').textContent = s.dates;
+        document.getElementById('sign-element').textContent = s.element;
+        document.getElementById('sign-planet').textContent = s.rulingPlanet;
+        document.getElementById('sign-personality').textContent = s.personality;
 
-        const traitsContainer = document.getElementById('sign-traits');
-        traitsContainer.innerHTML = '';
-        sign.traits.forEach(t => {
-            const span = document.createElement('span');
-            span.className = 'trait-pill';
-            span.textContent = t;
-            traitsContainer.appendChild(span);
+        const tBox = document.getElementById('sign-traits');
+        tBox.innerHTML = '';
+        s.traits.forEach(t => {
+            const p = document.createElement('span');
+            p.className = 'trait-pill';
+            p.textContent = t;
+            tBox.appendChild(p);
         });
+
+        CosmicApp.showView('sign');
+        CosmicApp.getHoroscope('today');
     },
 
-    initCompatibilityForm() {
-        const selA = document.getElementById('sign-a');
-        const selB = document.getElementById('sign-b');
-        // Only populate if empty to preserve selection
-        if (selA.options.length === 0) {
-            zodiacSigns.forEach(s => {
-                const optA = new Option(`${s.symbol} ${s.name}`, s.id);
-                const optB = new Option(`${s.symbol} ${s.name}`, s.id);
-                selA.add(optA);
-                selB.add(optB);
-            });
-            selB.selectedIndex = 4; // Default selection offset
-        }
-    }
-};
-
-/**
- * HOROSCOPE MANAGER (Triple Redundancy + Proxy Support)
- */
-const horoscopeManager = {
-    currentDay: 'today',
-    signId: null,
-
-    init(signId) {
-        horoscopeManager.signId = signId;
-        horoscopeManager.setDay('today');
+    initForm() {
+        const a = document.getElementById('sign-a');
+        const b = document.getElementById('sign-b');
+        if(!a || !b) return;
+        zodiacSigns.forEach(s => {
+            a.add(new Option(`${s.symbol} ${s.name}`, s.id));
+            b.add(new Option(`${s.symbol} ${s.name}`, s.id));
+        });
+        b.selectedIndex = 5;
     },
 
-    setDay(day) {
-        horoscopeManager.currentDay = day;
-        // Update UI Tabs
+    async getHoroscope(day) {
+        const sign = zodiacSigns.find(x => x.id === CosmicApp.currentSignId);
+        const caps = sign.name;
+        
         document.querySelectorAll('.tab-btn').forEach(btn => {
             btn.classList.toggle('active', btn.textContent.toLowerCase() === day);
+            btn.onclick = () => CosmicApp.getHoroscope(btn.textContent.toLowerCase());
         });
+
+        const loading = document.getElementById('horoscope-loading');
+        const content = document.getElementById('horoscope-content');
+        const err = document.getElementById('horoscope-error');
         
-        const titleEl = document.getElementById('horoscope-title');
-        if (titleEl) titleEl.textContent = `${day.charAt(0).toUpperCase() + day.slice(1)}'s Horoscope`;
-        horoscopeManager.fetchHoroscope();
-    },
+        loading.classList.remove('hidden');
+        content.classList.add('hidden');
+        err.classList.add('hidden');
 
-    async fetchHoroscope(retry = false) {
-        const contentDiv = document.getElementById('horoscope-content');
-        const loadingDiv = document.getElementById('horoscope-loading');
-        const errorDiv = document.getElementById('horoscope-error');
-
-        if (!contentDiv || !loadingDiv || !errorDiv) return;
-
-        contentDiv.classList.add('hidden');
-        errorDiv.classList.add('hidden');
-        loadingDiv.classList.remove('hidden');
-
+        const url = `https://horoscope-app-api.vercel.app/api/v1/get-horoscope/daily?sign=${caps}&day=${day}`;
         try {
-            const sign = zodiacSigns.find(s => s.id === horoscopeManager.signId);
-            if (!sign) return;
-
-            const capsSign = sign.name.charAt(0).toUpperCase() + sign.name.slice(1);
-            const lowerSign = sign.name.toLowerCase();
-            
-            const proxies = [
-                (u) => `https://api.allorigins.win/get?url=${encodeURIComponent(u)}`,
-                (u) => `https://corsproxy.io/?${encodeURIComponent(u)}`
-            ];
-
-            const primaryUrl = `https://horoscope-app-api.vercel.app/api/v1/get-horoscope/daily?sign=${capsSign}&day=${horoscopeManager.currentDay}`;
-            
-            // Try direct
+            let r = await fetch(url);
+            if(!r.ok) throw 'error';
+            let d = await r.json();
+            CosmicApp.renderHoro(d.data.horoscope_data, d.data.date);
+        } catch(e) {
             try {
-                let res = await fetch(primaryUrl);
-                if (res.ok) {
-                    let data = await res.json();
-                    horoscopeManager.renderSuccess(data.data.horoscope_data, data.data.date);
-                    return;
-                }
-            } catch (e) {
-                console.warn("Direct primary failed, trying proxies...");
-                for (let proxy of proxies) {
-                    try {
-                        let res = await fetch(proxy(primaryUrl));
-                        if (!res.ok) continue;
-                        let json = await res.json();
-                        let data = json;
-                        if (json.contents) {
-                             data = typeof json.contents === 'string' ? JSON.parse(json.contents) : json.contents;
-                        }
-                        if (data && data.data && data.data.horoscope_data) {
-                            horoscopeManager.renderSuccess(data.data.horoscope_data, data.data.date);
-                            return;
-                        }
-                    } catch (errP) { }
-                }
+                let px = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(url)}`);
+                let j = await px.json();
+                let d = JSON.parse(j.contents);
+                CosmicApp.renderHoro(d.data.horoscope_data, d.data.date);
+            } catch(e2) {
+                loading.classList.add('hidden');
+                err.classList.remove('hidden');
             }
-
-            // Secondary: Ohmanda
-            const ohmandaUrl = `https://ohmanda.com/api/horoscope/${lowerSign}`;
-            for (let proxy of proxies) {
-                try {
-                    let res = await fetch(proxy(ohmandaUrl));
-                    if (!res.ok) continue;
-                    let json = await res.json();
-                    let data = json;
-                    if (json.contents) {
-                        data = typeof json.contents === 'string' ? JSON.parse(json.contents) : json.contents;
-                    }
-                    if (data && data.horoscope) {
-                        horoscopeManager.renderSuccess(data.horoscope, data.date);
-                        return;
-                    }
-                } catch (errO) { }
-            }
-
-            throw new Error("All APIs failed");
-
-        } catch (err) {
-            console.error("Horoscope Fetch error:", err);
-            loadingDiv.classList.add('hidden');
-            errorDiv.classList.remove('hidden');
         }
     },
 
-    renderSuccess(text, date) {
-        const loading = document.getElementById('horoscope-loading');
-        const content = document.getElementById('horoscope-content');
-        const textEl = document.getElementById('horoscope-text');
-        const dateEl = document.getElementById('horoscope-date');
-        
-        if (loading) loading.classList.add('hidden');
-        if (content) content.classList.remove('hidden');
-        if (textEl) textEl.textContent = text;
-        if (dateEl) dateEl.textContent = `Date: ${date}`;
-    }
-};
+    renderHoro(txt, dt) {
+        document.getElementById('horoscope-loading').classList.add('hidden');
+        document.getElementById('horoscope-content').classList.remove('hidden');
+        document.getElementById('horoscope-text').textContent = txt;
+        document.getElementById('horoscope-date').textContent = dt;
+    },
 
-/**
- * COMPATIBILITY MANAGER
- */
-const compatibilityManager = {
-    calculate(e) {
-        if (e) e.preventDefault();
-        
-        const signAel = document.getElementById('sign-a');
-        const genderAel = document.getElementById('gender-a');
-        const signBel = document.getElementById('sign-b');
-        const genderBel = document.getElementById('gender-b');
-        
-        if (!signAel || !signBel) return;
-
-        const signA = signAel.value;
-        const genderA = genderAel.value;
-        const signB = signBel.value;
-        const genderB = genderBel.value;
-
+    runCompatibility() {
         const btn = document.getElementById('calc-btn');
-        if (!btn) return;
-
-        const originalText = btn.textContent;
+        if(!btn) return;
+        
         btn.textContent = "Analyzing Stars...";
         btn.disabled = true;
 
         setTimeout(() => {
             try {
-                const result = compatibilityManager.computeLogic(signA, signB, genderA, genderB);
-                compatibilityManager.renderResult(result, signA, signB);
-            } catch (err) {
-                console.error("Computation failed:", err);
-                alert("The stars are misaligned. Please try again.");
+                const sA = zodiacSigns.find(x => x.id === document.getElementById('sign-a').value);
+                const sB = zodiacSigns.find(x => x.id === document.getElementById('sign-b').value);
+                const base = COMPATIBILITY_MATRIX[sA.element][sB.element] || 70;
+
+                const cats = ['Communication', 'Trust', 'Love', 'Bond', 'Support', 'Values', 'Fun', 'Growth', 'Respect', 'Overall'];
+                const seed = sA.id + sB.id;
+                let h = 0; for(let i=0; i<seed.length; i++) h = ((h << 5) - h) + seed.charCodeAt(i) | 0;
+                const rng = () => { h = (h * 9301 + 49297) % 233280; return h / 233280; };
+
+                const items = cats.map(c => ({ name: c, val: Math.max(30, Math.min(100, Math.round(base + (rng()*40-20)))) }));
+                const score = Math.round(items.reduce((a,b)=>a+b.val, 0) / 10);
+                items[9].val = score;
+
+                CosmicApp.renderComp(score, items, sA, sB);
+            } catch(e) {
+                console.error(e);
+                alert("The calculation failed.");
             } finally {
-                btn.textContent = originalText;
+                btn.textContent = "Analyze Compatibility";
                 btn.disabled = false;
             }
-        }, 800);
+        }, 1000);
     },
 
-    computeLogic(signA, signB, genderA, genderB) {
-        const sA = zodiacSigns.find(s => s.id === signA);
-        const sB = zodiacSigns.find(s => s.id === signB);
-        
-        if (!sA || !sB) throw new Error("Invalid signs");
-
-        const baseScore = COMPATIBILITY_MATRIX[sA.element][sB.element] || 70;
-
-        const seedStr = signA + signB + genderA + genderB;
-        let hash = 0;
-        for (let i = 0; i < seedStr.length; i++) hash = ((hash << 5) - hash) + seedStr.charCodeAt(i) | 0;
-        const rng = () => { hash = (hash * 9301 + 49297) % 233280; return hash / 233280; };
-
-        const categories = [
-            'Communication', 'Trust & Respect', 'Emotional Connection', 
-            'Long-term Commitment', 'Friendship & Fun', 'Support & Growth', 
-            'Conflict Handling', 'Values & Ethics', 'Healthy Boundaries',
-            'Overall Compatibility'
-        ];
-
-        const breakdown = categories.map(cat => {
-            const variance = (rng() * 30) - 15;
-            let score = Math.round(baseScore + variance);
-            return { category: cat, score: Math.max(25, Math.min(100, score)) };
-        });
-
-        const avg = Math.round(breakdown.reduce((sum, item) => sum + item.score, 0) / breakdown.length);
-        const overallIdx = breakdown.findIndex(b => b.category === 'Overall Compatibility');
-        if (overallIdx !== -1) breakdown[overallIdx].score = avg;
-
-        let summary = "A solid connection with great potential.";
-        if (avg > 85) summary = "A rare and beautiful cosmic alignment! You are perfectly in sync.";
-        else if (avg > 70) summary = "Very strong compatibility. Your signs harmonize naturally.";
-        else if (avg > 50) summary = "Balanced. You have strengths that complement each other's weaknesses.";
-        else summary = "A challenging match, but deep growth is possible through understanding.";
-
-        return { overall: avg, breakdown, summary };
-    },
-
-    renderResult(result, idA, idB) {
-        const form = document.getElementById('love-form');
-        const area = document.getElementById('results-area');
-        if (!form || !area) return;
-
-        form.classList.add('hidden');
-        area.classList.remove('hidden');
-
-        const sA = zodiacSigns.find(s => s.id === idA);
-        const sB = zodiacSigns.find(s => s.id === idB);
+    renderComp(score, items, sA, sB) {
+        document.getElementById('love-form').classList.add('hidden');
+        document.getElementById('results-area').classList.remove('hidden');
 
         document.getElementById('res-sym-a').textContent = sA.symbol;
         document.getElementById('res-sym-b').textContent = sB.symbol;
         document.getElementById('res-names').textContent = `${sA.name} & ${sB.name}`;
-        document.getElementById('res-percent').textContent = `${result.overall}%`;
-        document.getElementById('res-summary').textContent = result.summary;
+        document.getElementById('res-percent').textContent = `${score}%`;
 
         const list = document.getElementById('res-breakdown');
-        if (list) {
-            list.innerHTML = '';
-            result.breakdown.forEach(item => {
-                const row = document.createElement('div');
-                row.className = 'bar-container';
-                row.innerHTML = `
-                    <div class="bar-header"><span>${item.category}</span><span>${item.score}%</span></div>
-                    <div class="progress-track"><div class="progress-fill" style="width: ${item.score}%"></div></div>
-                `;
-                list.appendChild(row);
-            });
-        }
-
+        list.innerHTML = '';
+        items.slice(0, 9).forEach(i => {
+            const d = document.createElement('div');
+            d.className = 'bar-container';
+            d.innerHTML = `
+                <div class="bar-header"><span>${i.name}</span><span>${i.val}%</span></div>
+                <div class="progress-track"><div class="progress-fill" style="width: ${i.val}%"></div></div>
+            `;
+            list.appendChild(d);
+        });
         window.scrollTo(0,0);
-    },
-
-    reset() {
-        const area = document.getElementById('results-area');
-        const form = document.getElementById('love-form');
-        if (area) area.classList.add('hidden');
-        if (form) form.classList.remove('hidden');
     }
 };
 
-// Global Exposure
-window.router = router;
-window.renderLogic = renderLogic;
-window.horoscopeManager = horoscopeManager;
-window.compatibilityManager = compatibilityManager;
+// Global Helper
+window.resetCalc = () => {
+    document.getElementById('results-area').classList.add('hidden');
+    document.getElementById('love-form').classList.remove('hidden');
+};
 
-// Start App
-document.addEventListener('DOMContentLoaded', () => {
-    router.navigate('home');
-});
+// INITIALIZE
+document.addEventListener('DOMContentLoaded', CosmicApp.init);
