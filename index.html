@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cosmic Compatibility</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Outfit:wght@300;400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <link rel="manifest" href="manifest.json">
+    <script src="script.js" defer></script>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Navigation -->
+        <nav class="top-nav">
+            <h1>Cosmic <span class="highlight">Insights</span></h1>
+            <button id="install-btn" class="btn btn-sm hidden" style="margin-top: 5px; background: rgba(255,215,0,0.2); width: auto; display: inline-block;">✨ Install App</button>
+        </nav>
+
+        <!-- Main Content Area -->
+        <main id="main-content">
+            <!-- VIEW: HOME (Zodiac Grid) -->
+            <div id="home-view" class="view active">
+                <p class="subtitle">Explore the mysteries of the cosmos</p>
+                <div class="zodiac-grid" id="zodiac-grid">
+                    <!-- Zodiac items injected by JS -->
+                </div>
+            </div>
+
+            <!-- VIEW: SIGN DETAILS -->
+            <div id="sign-view" class="view hidden">
+                <button class="back-btn" onclick="router.navigate('home')">← Back to Zodiac</button>
+                <div class="glass-panel text-center relative">
+                    <div class="bg-symbol" id="sign-symbol-bg"></div>
+                    <div class="sign-header">
+                        <span class="sign-icon-large" id="sign-symbol"></span>
+                        <h1 id="sign-name"></h1>
+                        <p class="date-range" id="sign-dates"></p>
+                    </div>
+                    <div class="badges">
+                        <div class="badge">
+                            <span class="label">Element</span>
+                            <span class="value" id="sign-element"></span>
+                        </div>
+                        <div class="badge">
+                            <span class="label">Planet</span>
+                            <span class="value" id="sign-planet"></span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="glass-panel">
+                    <h2>Personality</h2>
+                    <p id="sign-personality"></p>
+                    <div class="traits-container" id="sign-traits"></div>
+                </div>
+
+                <div class="horoscope-section">
+                    <div class="tabs">
+                        <button class="tab-btn active" onclick="horoscopeManager.setDay('today')">Today</button>
+                        <button class="tab-btn" onclick="horoscopeManager.setDay('tomorrow')">Tomorrow</button>
+                    </div>
+                    <div class="glass-panel" id="horoscope-display">
+                        <div id="horoscope-loading" class="hidden">
+                            <div class="spinner"></div> Loading stars...
+                        </div>
+                        <div id="horoscope-error" class="hidden">
+                            <p>Unable to connect to the cosmos.</p>
+                            <button class="btn btn-sm" onclick="horoscopeManager.fetchHoroscope(true)">Retry</button>
+                        </div>
+                        <div id="horoscope-content">
+                            <h3 id="horoscope-title">Today's Horoscope</h3>
+                            <p id="horoscope-text">Select a day to view your reading.</p>
+                            <small id="horoscope-date"></small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- VIEW: COMPATIBILITY -->
+            <div id="compatibility-view" class="view hidden">
+                <h2>Love Calculator</h2>
+                <p class="subtitle">Discover your cosmic connection</p>
+
+                <form id="love-form" onsubmit="compatibilityManager.calculate(event)">
+                    <div class="glass-panel">
+                        <div class="form-section">
+                            <h3><span class="number-badge">1</span> First Person</h3>
+                            <div class="input-group">
+                                <label>Zodiac Sign</label>
+                                <select id="sign-a" class="select-input"></select>
+                            </div>
+                            <div class="input-group">
+                                <label>Gender</label>
+                                <select id="gender-a" class="select-input">
+                                    <option>Female</option>
+                                    <option>Male</option>
+                                    <option>Non-binary</option>
+                                </select>
+                            </div>
+                        </div>
+    
+                        <div class="heart-divider">❤</div>
+    
+                        <div class="form-section">
+                            <h3><span class="number-badge number-2">2</span> Second Person</h3>
+                            <div class="input-group">
+                                <label>Zodiac Sign</label>
+                                <select id="sign-b" class="select-input"></select>
+                            </div>
+                            <div class="input-group">
+                                <label>Gender</label>
+                                <select id="gender-b" class="select-input">
+                                    <option>Male</option>
+                                    <option>Female</option>
+                                    <option>Non-binary</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary" id="calc-btn">Analyze Compatibility</button>
+                    </div>
+                </form>
+
+                <div id="results-area" class="hidden">
+                    <button class="btn btn-secondary" onclick="compatibilityManager.reset()">Check Another Couple</button>
+                    
+                    <div class="glass-panel text-center">
+                         <div class="match-header">
+                            <span id="res-sym-a"></span>
+                            <span class="heart-icon">❤</span>
+                            <span id="res-sym-b"></span>
+                         </div>
+                         <h2 id="res-names"></h2>
+                         <div class="score-circle">
+                             <span id="res-percent">0%</span>
+                         </div>
+                         <p class="match-label">Match Score</p>
+                         <p id="res-summary" class="italic-text"></p>
+                    </div>
+
+                    <h3>Detailed Breakdown</h3>
+                    <div class="glass-panel" id="res-breakdown">
+                        <!-- Bars injected here -->
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- Bottom Navigation Mobile -->
+        <nav class="bottom-nav">
+            <button class="nav-item active" onclick="router.navigate('home')">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+                <span>Zodiac</span>
+            </button>
+            <button class="nav-item" onclick="router.navigate('compatibility')">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+                <span>Compatibility</span>
+            </button>
+        </nav>
+    </div>
+</body>
+</html>
