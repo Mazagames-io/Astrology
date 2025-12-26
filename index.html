@@ -4,9 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Cosmic Insights</title>
-    <link rel="stylesheet" href="./style.css?v=2.1">
+    <link rel="stylesheet" href="./style.css?v=2.2">
     <link rel="manifest" href="./manifest.json">
-    <script src="./script.js?v=2.1" defer></script>
+    <script src="./script.js?v=2.2" defer></script>
 </head>
 <body>
     <div class="app-container">
@@ -68,15 +68,25 @@
                 <form id="love-form" onsubmit="event.preventDefault(); Cosmic.calculate();">
                     <div class="glass-panel">
                         <div style="margin-bottom: 1.5rem;">
-                            <label style="display:block; margin-bottom: 0.5rem; font-size: 0.9rem; color: var(--text-muted);">First Person</label>
-                            <select id="sign-a" class="select-input"></select>
+                            <label style="display:block; margin-bottom: 0.5rem; font-size: 0.9rem; color: var(--text-muted);">First Person Sign & Gender</label>
+                            <select id="sign-a" class="select-input" style="margin-bottom: 8px;"></select>
+                            <select id="gender-a" class="select-input">
+                                <option>Female</option>
+                                <option>Male</option>
+                                <option>Non-binary</option>
+                            </select>
                         </div>
 
                         <div class="heart-divider">❤</div>
 
                         <div style="margin-bottom: 1.5rem;">
-                            <label style="display:block; margin-bottom: 0.5rem; font-size: 0.9rem; color: var(--text-muted);">Second Person</label>
-                            <select id="sign-b" class="select-input"></select>
+                            <label style="display:block; margin-bottom: 0.5rem; font-size: 0.9rem; color: var(--text-muted);">Second Person Sign & Gender</label>
+                            <select id="sign-b" class="select-input" style="margin-bottom: 8px;"></select>
+                            <select id="gender-b" class="select-input">
+                                <option>Male</option>
+                                <option>Female</option>
+                                <option>Non-binary</option>
+                            </select>
                         </div>
 
                         <button type="submit" class="btn btn-primary" id="calc-btn">Analyze Compatibility</button>

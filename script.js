@@ -1,7 +1,7 @@
 /**
- * COSMIC INSIGHTS - VERSION 2.1 (FIXED VIEW ENGINE)
+ * COSMIC INSIGHTS - VERSION 2.2 (RESTORED GENDER)
  */
-console.log("Cosmic Engine 2.1: Loading...");
+console.log("Cosmic Engine 2.2: Active");
 
 const ZODIAC_DATA = [
     { id: 'aries', name: 'Aries', dates: 'Mar 21 - Apr 19', element: 'Fire', planet: 'Mars', symbol: '♈', desc: 'Eager, dynamic, quick, and competitive.' },
@@ -164,15 +164,34 @@ window.Cosmic = {
     calculate() {
         const btn = document.getElementById('calc-btn');
         if (!btn) return;
+
+        const valA = document.getElementById('sign-a').value;
+        const genA = document.getElementById('gender-a').value;
+        const valB = document.getElementById('sign-b').value;
+        const genB = document.getElementById('gender-b').value;
+
         btn.innerText = "Consulting Stars..."; 
         btn.disabled = true;
 
         setTimeout(() => {
-            const sA = ZODIAC_DATA.find(x => x.id === document.getElementById('sign-a').value);
-            const sB = ZODIAC_DATA.find(x => x.id === document.getElementById('sign-b').value);
+            const sA = ZODIAC_DATA.find(x => x.id === valA);
+            const sB = ZODIAC_DATA.find(x => x.id === valB);
             
             const base = COMPAT_MATRIX[sA.element][sB.element] || 75;
-            const score = Math.max(40, Math.min(100, Math.round(base + (Math.random() * 20 - 10))));
+            
+            // Seed the randomizer with signs + gender for consistent unique feel
+            const seedStr = valA + genA + valB + genB;
+            let hash = 0;
+            for (let i = 0; i < seedStr.length; i++) {
+                hash = ((hash << 5) - hash) + seedStr.charCodeAt(i);
+                hash |= 0;
+            }
+            const seededRandom = () => {
+                hash = (hash * 9301 + 49297) % 233280;
+                return hash / 233280;
+            };
+
+            const score = Math.max(40, Math.min(100, Math.round(base + (seededRandom() * 20 - 10))));
 
             document.getElementById('love-form').classList.add('hidden');
             document.getElementById('results-area').classList.remove('hidden');
@@ -186,7 +205,7 @@ window.Cosmic = {
             const cats = ['Communication', 'Trust', 'Bond', 'Support', 'Values'];
             list.innerHTML = cats.map(c => `
                 <div class="bar-container">
-                    <div class="bar-header"><span>${c}</span><span>${Math.round(score - 5 + Math.random()*10)}%</span></div>
+                    <div class="bar-header"><span>${c}</span><span>${Math.round(score - 5 + seededRandom()*10)}%</span></div>
                     <div class="progress-track"><div class="progress-fill" style="width: ${score}%"></div></div>
                 </div>
             `).join('');
